@@ -1,4 +1,5 @@
 import base64
+import textwrap
 from io import BytesIO
 
 from PIL import Image, ImageDraw, ImageFont
@@ -27,6 +28,21 @@ def _clamp_box(step: UIStep, image_width: int, image_height: int) -> tuple[int, 
     return x1, y1, x2, y2
 
 
+def _wrap_caption(text: str, max_chars: int = 42) -> str:
+    return "\n".join(textwrap.wrap(text, width=max_chars, max_lines=2, placeholder="..."))
+
+
+def _measure_multiline(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont) -> tuple[int, int]:
+    lines = text.splitlines() or [text]
+    widths: list[int] = []
+    heights: list[int] = []
+    for line in lines:
+        box = draw.textbbox((0, 0), line, font=font)
+        widths.append(box[2] - box[0])
+        heights.append(box[3] - box[1])
+    return max(widths, default=0), sum(heights) + max(0, len(lines) - 1) * 4
+
+
 def render_steps_overlay_data_url(image_bytes: bytes, steps: list[UIStep]) -> str:
     with Image.open(BytesIO(image_bytes)) as source:
         image = source.convert("RGBA")
@@ -37,14 +53,21 @@ def render_steps_overlay_data_url(image_bytes: bytes, steps: list[UIStep]) -> st
     label_font = _font(max(14, image_width // 80), bold=True)
     text_font = _font(max(12, image_width // 110), bold=False)
 
-    accent = (37, 99, 235, 255)
-    accent_fill = (37, 99, 235, 38)
+    palette = [
+        ((37, 99, 235, 255), (37, 99, 235, 42)),
+        ((13, 148, 136, 255), (13, 148, 136, 42)),
+        ((202, 138, 4, 255), (202, 138, 4, 46)),
+        ((220, 38, 38, 255), (220, 38, 38, 42)),
+    ]
     label_fill = (255, 255, 255, 255)
     shadow = (15, 23, 42, 150)
 
-    for step in sorted(steps, key=lambda item: item.order):
+    for index, step in enumerate(sorted(steps, key=lambda item: item.order)):
+        accent, accent_fill = palette[index % len(palette)]
         x1, y1, x2, y2 = _clamp_box(step, image_width, image_height)
         line_width = max(3, image_width // 350)
+        center_x = x1 + (x2 - x1) // 2
+        center_y = y1 + (y2 - y1) // 2
 
         draw.rounded_rectangle(
             (x1, y1, x2, y2),
@@ -53,11 +76,13 @@ def render_steps_overlay_data_url(image_bytes: bytes, steps: list[UIStep]) -> st
             outline=accent,
             width=line_width,
         )
+        draw.line((center_x, y1, center_x, y2), fill=accent, width=max(1, line_width // 2))
+        draw.line((x1, center_y, x2, center_y), fill=accent, width=max(1, line_width // 2))
 
         badge_text = str(step.order)
         badge_radius = max(13, image_width // 95)
-        badge_x = max(badge_radius + 4, x1)
-        badge_y = max(badge_radius + 4, y1)
+        badge_x = min(max(badge_radius + 4, x1), image_width - badge_radius - 4)
+        badge_y = min(max(badge_radius + 4, y1), image_height - badge_radius - 4)
         draw.ellipse(
             (
                 badge_x - badge_radius,
@@ -80,12 +105,10 @@ def render_steps_overlay_data_url(image_bytes: bytes, steps: list[UIStep]) -> st
             fill=label_fill,
         )
 
-        caption = f"{step.action}: {step.label}"
-        caption_box = draw.textbbox((0, 0), caption, font=text_font)
-        caption_width = caption_box[2] - caption_box[0]
-        caption_height = caption_box[3] - caption_box[1]
-        pad_x = 8
-        pad_y = 5
+        caption = _wrap_caption(f"{step.action.upper()} - {step.label}: {step.description}")
+        caption_width, caption_height = _measure_multiline(draw, caption, text_font)
+        pad_x = 10
+        pad_y = 7
         caption_x = min(max(4, x1), max(4, image_width - caption_width - pad_x * 2 - 4))
         caption_y = y2 + 8
         if caption_y + caption_height + pad_y * 2 > image_height:
@@ -111,11 +134,12 @@ def render_steps_overlay_data_url(image_bytes: bytes, steps: list[UIStep]) -> st
             radius=6,
             fill=accent,
         )
-        draw.text(
+        draw.multiline_text(
             (caption_x + pad_x, caption_y + pad_y - 1),
             caption,
             font=text_font,
             fill=label_fill,
+            spacing=4,
         )
 
     composed = Image.alpha_composite(image, overlay).convert("RGB")

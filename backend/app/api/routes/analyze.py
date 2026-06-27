@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -14,10 +15,21 @@ router = APIRouter(prefix="/api", tags=["analysis"])
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 
+def _image_to_data_url(image_bytes: bytes, mime_type: str) -> str:
+    encoded = base64.b64encode(image_bytes).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+@router.get("/health")
+def api_health() -> dict[str, str]:
+    settings = get_settings()
+    return {"status": "ok", "model": settings.openai_model}
+
+
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_image(
     file: UploadFile = File(...),
-    user_goal: str = Form("Guide the user through the next useful UI actions."),
+    user_goal: str = Form("Analyze the screenshot and guide the next UI actions."),
 ) -> AnalyzeResponse:
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Upload must be an image.")
@@ -44,6 +56,7 @@ async def analyze_image(
             user_goal=user_goal,
             image_size=(image_width, image_height),
             model=settings.openai_model,
+            api_key=settings.openai_api_key,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -59,7 +72,11 @@ async def analyze_image(
         source_filename=file.filename,
         image_width=image_width,
         image_height=image_height,
+        image_mime_type=file.content_type,
+        model_used=settings.openai_model,
         summary=analysis.summary,
         steps=analysis.steps,
+        warnings=analysis.warnings,
+        original_image_data_url=_image_to_data_url(image_bytes, file.content_type),
         annotated_image_data_url=annotated_image_data_url,
     )
