@@ -115,7 +115,6 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 The backend also supports these alternative API key names:
 
 ```env
-OPEN_AI_KEY=sk-your-openai-api-key
 OPEN_API_KEY=sk-your-openai-api-key
 ```
 
