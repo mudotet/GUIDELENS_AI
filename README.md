@@ -24,6 +24,10 @@ docker compose up --build
 
 Frontend: http://localhost:3000
 
+Pages:
+
+- `/`: upload input screenshot, ask a question, and view the annotated output image
+
 Backend health check: http://localhost:8000/health
 
 API health check: http://localhost:8000/api/health
@@ -39,7 +43,9 @@ Form fields:
 
 Response includes detected steps and `annotated_image_data_url`, a PNG data URL that the frontend can render directly.
 
-Default model: `gpt-5.4-mini`. Override it with `OPENAI_MODEL` in `.env`.
+Default model: `gpt-5.5-pro`. Override it with `OPENAI_MODEL` in `.env`.
+
+The frontend uses Tailwind CSS with Roboto and the requested palette: primary `#DEE2F2`, secondary `#F5F5F5`, button `#E48C3A`.
 
 Each returned step includes:
 

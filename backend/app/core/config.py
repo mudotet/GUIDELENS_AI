@@ -10,7 +10,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("OPENAI_API_KEY", "OPEN_AI_KEY", "OPEN_API_KEY"),
     )
     openai_model: str = Field(
-        default="gpt-5.4-mini",
+        default="gpt-5.5-pro",
         validation_alias=AliasChoices("OPENAI_MODEL", "OPEN_AI_MODEL"),
     )
     cors_origins_raw: str = Field(
