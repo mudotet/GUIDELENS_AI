@@ -42,15 +42,9 @@ type ViewMode = "annotated" | "original";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
-const examples = [
-  "Hướng dẫn người dùng đăng nhập vào hệ thống.",
-  "Chỉ ra các bước để tạo một dự án mới.",
-  "Tìm nút cần bấm để tiếp tục thanh toán."
-];
-
 export default function HomePage() {
   const [file, setFile] = useState<File | null>(null);
-  const [question, setQuestion] = useState(examples[0]);
+  const [question, setQuestion] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("annotated");
@@ -147,22 +141,9 @@ export default function HomePage() {
                 onChange={(event) => setQuestion(event.target.value)}
                 rows={5}
                 className="min-h-32 resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-brand-button/30 transition focus:ring-4"
-                placeholder="Ví dụ: Hướng dẫn người dùng bấm nút thanh toán"
+                placeholder="Nhập yêu cầu bạn muốn AI hướng dẫn trên ảnh"
               />
             </label>
-
-            <div className="grid gap-2">
-              {examples.map((example) => (
-                <button
-                  key={example}
-                  type="button"
-                  onClick={() => setQuestion(example)}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:border-brand-button"
-                >
-                  {example}
-                </button>
-              ))}
-            </div>
 
             <button
               type="submit"
@@ -191,9 +172,8 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setViewMode("annotated")}
-                      className={`inline-flex h-9 items-center justify-center gap-2 rounded-full px-3 ${
-                        viewMode === "annotated" ? "bg-brand-button text-white" : "text-slate-600"
-                      }`}
+                      className={`inline-flex h-9 items-center justify-center gap-2 rounded-full px-3 ${viewMode === "annotated" ? "bg-brand-button text-white" : "text-slate-600"
+                        }`}
                     >
                       <Crosshair size={15} aria-hidden />
                       Output
@@ -201,9 +181,8 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => setViewMode("original")}
-                      className={`inline-flex h-9 items-center justify-center gap-2 rounded-full px-3 ${
-                        viewMode === "original" ? "bg-brand-button text-white" : "text-slate-600"
-                      }`}
+                      className={`inline-flex h-9 items-center justify-center gap-2 rounded-full px-3 ${viewMode === "original" ? "bg-brand-button text-white" : "text-slate-600"
+                        }`}
                     >
                       <ImagePlus size={15} aria-hidden />
                       Input
