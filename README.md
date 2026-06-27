@@ -4,6 +4,14 @@ AI UI Tutor is a one-page demo app that helps users understand what to do on a U
 
 The user uploads a screenshot and enters a question or goal. The backend sends the image to OpenAI, asks the model to identify useful UI actions, and receives step-by-step guidance with pixel coordinates. The backend then draws those steps directly onto the original image and returns a new annotated output image.
 
+## Before and After
+
+The app starts with a clean upload screen. After the user uploads a screenshot and enters a goal, the AI analyzes the interface, returns the recommended action steps, and the backend draws the guidance directly on top of the image.
+
+| Before analysis | After analysis |
+| --- | --- |
+| ![AI UI Tutor before analysis](docs/images/app-demo.png) | ![AI UI Tutor after analysis](docs/images/app-after.png) |
+
 ## Main Features
 
 - Upload a UI screenshot from the frontend.
@@ -22,34 +30,54 @@ The user uploads a screenshot and enters a question or goal. The backend sends t
 - Image rendering: Pillow.
 - Runtime: Docker Compose with separate frontend and backend services.
 
+## Project Architecture
+
+```mermaid
+flowchart LR
+  User["User"] --> Frontend["Next.js frontend"]
+  Frontend --> Backend["FastAPI backend"]
+  Backend --> AIService["ai_services"]
+  AIService --> OpenAI["OpenAI vision model"]
+  Backend --> Renderer["Pillow image renderer"]
+  Renderer --> Frontend
+  Frontend --> Output["Annotated image and step list"]
+```
+
+The frontend is responsible for the demo experience: uploading an image, collecting the user's question, and showing the annotated result. The backend receives the file, calls the AI service, renders visual guidance onto the screenshot, and returns everything as JSON.
+
 ## Project Structure
 
 ```text
 .
-|-- ai_services/
-|   |-- openai_vision.py     # Calls OpenAI to analyze screenshots
-|   |-- prompts.py           # Prompt for JSON steps and coordinates
-|   `-- schemas.py           # Pydantic schemas for AI output
+|-- ai_services/                    # Shared AI logic used by the backend
+|   |-- openai_vision.py            # Calls OpenAI to analyze screenshots
+|   |-- prompts.py                  # Prompt for JSON steps and coordinates
+|   `-- schemas.py                  # Pydantic schemas for AI output
 |
-|-- backend/
+|-- backend/                        # FastAPI application
 |   |-- app/
-|   |   |-- api/routes/      # FastAPI routes
-|   |   |-- core/            # Environment configuration
-|   |   |-- schemas/         # API response schemas
-|   |   `-- services/        # Image overlay rendering
-|   |-- Dockerfile
-|   `-- requirements.txt
+|   |   |-- api/routes/             # HTTP endpoints such as /api/analyze
+|   |   |-- core/                   # Environment and app configuration
+|   |   |-- schemas/                # API request and response schemas
+|   |   `-- services/               # Image overlay rendering with Pillow
+|   |-- Dockerfile                  # Backend Docker image
+|   `-- requirements.txt            # Python dependencies
 |
-|-- frontend/
-|   |-- app/                 # Next.js app router
-|   |-- Dockerfile
-|   |-- package.json
-|   |-- tailwind.config.ts
-|   `-- postcss.config.js
+|-- frontend/                       # Next.js demo interface
+|   |-- app/                        # App Router pages and global styles
+|   |-- Dockerfile                  # Frontend Docker image
+|   |-- package.json                # Node dependencies and scripts
+|   |-- tailwind.config.ts          # Theme colors and Roboto font setup
+|   `-- postcss.config.js           # Tailwind/PostCSS configuration
 |
-|-- docker-compose.yml
-|-- .env.example
-`-- README.md
+|-- docs/
+|   `-- images/
+|       |-- app-demo.png            # Before-analysis screenshot shown in this README
+|       `-- app-after.png           # After-analysis screenshot shown in this README
+|
+|-- docker-compose.yml              # Runs frontend and backend together
+|-- .env.example                    # Example environment variables
+`-- README.md                       # Project guide
 ```
 
 ## How It Works
